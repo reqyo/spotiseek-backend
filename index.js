@@ -1,28 +1,47 @@
 const slsk = require('slsk-client')
+const music = require('./music.json')
+require('dotenv').config()
+
+let downloaded = true
+
 slsk.connect(
   {
-    user: '',
-    pass: ''
+    user: process.env.USER,
+    pass: process.env.PASS
   },
   (err, client) => {
-    client.search(
-      {
-        req: 'random',
-        timeout: 2000
-      },
-      (err, res) => {
-        if (err) return console.log(err)
-        console.log('about to dl')
-        client.download(
+    console.log(err)
+    if (client) {
+      console.log(client)
+      // console.log(err)
+      for (
+        let index = 0;
+        index < music.length;
+        index = downloaded ? index + 1 : index
+      ) {
+        downloaded = false
+        console.log('About to search')
+        client.search(
           {
-            file: res[0],
-            path: __dirname + '/random.mp3'
+            req: music[index].track.name,
+            timeout: 5000
           },
-          (err, data) => {
-            //can res.send(data.buffer) if you use express
+          (err, res) => {
+            if (err) return console.log(err)
+            client.download(
+              {
+                file: res[0],
+                path: `${__dirname}/${track.track.name}.mp3`
+              },
+              (err, data) => {
+                if (data) {
+                  downloaded = true
+                }
+              }
+            )
           }
         )
       }
-    )
+    }
   }
 )
