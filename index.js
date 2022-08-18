@@ -1,5 +1,7 @@
 const slsk = require('slsk-client')
 const music = require('./music.json')
+const util = require('util')
+// https://zellwk.com/blog/converting-callbacks-to-promises/
 require('dotenv').config()
 
 let client
@@ -18,40 +20,46 @@ slsk.connect(
     searchForMusic(music)
   }
 )
-let downloaded = true
+let currentIndex = 1
 
-function searchForMusic(m) {
+async function searchForMusic(m) {
+  const search = util.promisify(client.search)
+  const download = util.promisify(client.download)
   const length = m.length
   console.log(length)
-  let currentIndex = 4
-
   do {
-    downloaded = false
-    console.log(`Current Song Number ${currentIndex}`)
     console.log('About to search')
-    client.search(
-      {
+    let res
+    try {
+      res = await search({
         req: m[currentIndex].track.name,
         timeout: 5000
-      },
-      (err, res) => {
-        if (err) return console.log(err)
-        const files = res.filter((item) => item.slots && item.bitrate === 320)
-        if (files.length === 0) return
-        console.log(files)
-        console.log(files.length, `Got the search: ${files[0]}`)
-        console.log('About to download')
-        client.download(
-          {
-            file: files[0]
-          },
-          (err, data) => {
-            console.log('Downloaded!')
-            currentIndex++
-            downloaded = true
-          }
-        )
-      }
-    )
-  } while (currentIndex < length && downloaded)
+      })
+    } catch (e) {
+      console.log('Error', e)
+    }
+
+    const files = res.filter((item) => item.slots && item.bitrate === 320)
+    if (files.length === 0) {
+      console.log('No files found')
+      continue
+    }
+    console.log(files)
+    console.log(files.length, `Got the search: ${files[0]}`)
+    console.log('About to download')
+    let data
+    try {
+      data = await download({
+        file: files[0]
+      })
+    } catch (e) {
+      console.log('Error: ', e)
+    }
+    console.log('Downloaded!')
+    console.log(data)
+
+    // step into debugger, log stuff out.
+
+    currentIndex++
+  } while (currentIndex < length)
 }
