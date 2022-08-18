@@ -28,11 +28,13 @@ async function searchForMusic(m) {
   const length = m.length
   console.log(length)
   do {
+    const trackAndArtist = `${m[currentIndex].track.name} ${m[currentIndex].track.artists[0].name}`
     console.log('About to search')
+    console.log(`Searching for: ${trackAndArtist}`)
     let res
     try {
       res = await search({
-        req: m[currentIndex].track.name,
+        req: trackAndArtist,
         timeout: 5000
       })
     } catch (e) {
